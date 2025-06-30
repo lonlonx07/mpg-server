@@ -1,0 +1,63 @@
+        #grid {
+			font-family: arial, sans-serif;
+			border-collapse: collapse;
+			width: 300px;
+			height: 300px;
+			margin-left: auto;
+			margin-right: auto;
+		}
+		
+		#game_stat {
+			width: 100%;
+			border-collapse: collapse;
+		}
+			
+		.game_board td, .game_board th {
+			border: 1px solid #dddddd;
+			text-align: center;
+			width: 90px;
+			height: 90px;
+			border-color: #000;
+		}
+		
+		.game_stat td, .game_stat th {
+			border: 1px solid #dddddd;
+			text-align: center;
+			padding: -20px;
+			width: 20px;
+			height: 20px;
+			border-color: #000;
+			padding: 10px;
+		}
+		
+		#home {
+			margin-top: 10%;
+			text-align: center;
+		}
+		
+		#board, #intro {
+			width: 100%;
+			margin-top: 8%;
+			text-align: center;
+		}
+		
+		#room_id {
+			width: 200px;
+			border: dotted 1px;
+			padding: 2px 5px 2px 5px;
+		}
+		
+		#winner_indc {
+			font-size: 30px;
+			color: red;
+			width: 100%;
+			text-align: center;
+		}
+		
+		.navi_button {
+			width:200px;
+		}
+		
+		.create {
+			height:50px;
+		}

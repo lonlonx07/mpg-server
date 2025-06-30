@@ -1,0 +1,165 @@
+<html>
+	<link href="../assets/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+	<link href="../assets/css/mystyle.css" rel="stylesheet">
+	<link href="../assets/css/snake-and-ladder.css" rel="stylesheet">
+	<style>
+		#GameCanvas {
+			border: solid 1px gray;
+		}
+
+		.dice {
+			width: 300px;
+			height: 300px;
+		}
+	</style>
+	<body>
+		<div class="container">	
+			<div id="create" class="row align-center h-100">
+				<div class="menu col-6 text-center">
+					<span>
+					PLAYER NAME: 
+					<br/>
+					<input id="player_name" class="inp"/>
+					<br/><br/>
+					<button id="btn_create" class="btn btn-primary">CREATE</button>
+					</span>
+				</div>
+				<div class="menu col-6 text-center">
+					ROOM ID:
+					<br/>
+					<input id="room_id" class="inp"/>
+					<br/><br/>
+					PLAYER NAME: 
+					<br/>
+					<input id="player_name2" class="inp"/>
+					<br/><br/>
+					<button id="btn_join" class="btn btn-primary">JOIN</button>
+				</div>
+			</div>
+			<div id="game" class="d-none w-100">
+				
+				
+					<div>
+						<span class="form-control">
+							Room ID: <label id="room_id_dsp"></label>&nbsp;&nbsp;&nbsp;
+							<i id="btn_copy" class="btn fa-solid fa-copy" onclick="copy_room_id()"></i>
+						</span>
+					</div>
+					
+					<div class="border">
+						<img class="d-none" id="board" width="736" height="736" src="../images/snake-and-ladder/board1.jpg">
+						<canvas id="GameCanvas">
+							Sorry, your browser does not support canvas.
+						</canvas>
+					</div>
+					<div class="row">
+						<div class="col-3">
+							<img id="dice-anim" class="dice" src="../images/snake-and-ladder/dice_1.png">
+						</div>
+						<div class="col-9">
+							<button id="btn_draw" class="btn btn-primary">DRAW</button>
+							<button id="btn_quit" class="btn btn-primary">QUIT</button>
+						</div>
+					</div>
+					
+				
+			</div>
+			
+		</div>
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="../assets/dist/js/jquery-3.6.3.js"></script>
+	<script src="../assets/js/scripts.js"></script>
+		
+	<script>
+
+		let req_key = "";
+
+		const canvas = document.getElementById("GameCanvas");
+		const ctx = canvas.getContext("2d");
+		const image = document.getElementById("board");
+		let p1;
+		function load_game_canvas(){
+			let sca = .5;
+			let sca2 = .25;
+
+			$(canvas).attr('width', window.innerHeight*sca+10);
+			$(canvas).attr('height', window.innerHeight*sca+10);
+			ctx.scale(sca, sca);
+
+			
+			ctx.drawImage(image, 5, 5);
+			ctx.scale(sca2, sca2);
+
+			p1 = create_image(ctx, 200, 200, 0, 0);
+		}
+
+		function create_image(obj, obj_w, obj_h, pos_x, pos_y){
+			let img = new Image();
+			img.src =  "../images/snake-and-ladder/ryu_norm_face.png";
+			img.width = obj_w;
+			img.height = obj_h;
+			//img.x = pos_x;
+			//img.y = pos_y;
+			img.addEventListener("load", (e) => {
+				ctx.drawImage(img, pos_x, pos_y);
+			});
+
+			return img;
+		}
+
+		function init_game(){
+            load_game_canvas();
+        }
+
+		window.onload = function(){
+			let ind_arr = get_cookie();
+
+			if(ind_arr.length != 0){
+				$("#create").addClass("d-none");
+				$("#game").removeClass("d-none");
+				socket.emit("rejoin_room", ind_arr);
+			}
+			else{
+				//socket.emit("enter_room", ['create','name']);
+			}
+
+			init();
+		}
+
+		socket.on('server_update', function(data) {
+			let ind_arr = get_cookie();
+			/*let str = "";
+			let tmp_room_id = "";
+			for(i=1; i<=Object.keys(data).length; i++){
+				tmp_room_id = ind_arr[0];
+			}*/
+		});
+
+		$("#btn_draw").on('click', function(){
+			let ind_arr = get_cookie();
+			socket.emit("command", ["snake-and-ladder", "draw_dice", ind_arr[0]]);
+		});
+
+		let dsp_delay;
+		function draw_display_result(rnd){
+			clearInterval(dsp_delay);
+			$('#dice-anim').attr('src', '../images/snake-and-ladder/dice_'+rnd+'.png');
+		}
+
+		socket.on('return_draw', function(data) {
+			$('#dice-anim').attr('src', '../images/snake-and-ladder/dice-anim.gif');
+			let degrees = data[1];
+			$('#dice-anim').css({
+				'transform': 'rotate(' + degrees + 'deg)',
+				'-ms-transform': 'rotate(' + degrees + 'deg)',
+				'-moz-transform': 'rotate(' + degrees + 'deg)',
+				'-webkit-transform': 'rotate(' + degrees + 'deg)',
+				'-o-transform': 'rotate(' + degrees + 'deg)'
+			}); 
+			dsp_delay = setInterval(draw_display_result, 1000, data[0]);
+		});
+
+	</script>
+	</body>
+</html>

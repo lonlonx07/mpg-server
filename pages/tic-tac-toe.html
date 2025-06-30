@@ -1,0 +1,268 @@
+<html>
+	<link href="../assets/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+	<link href="../assets/css/mystyle.css" rel="stylesheet">
+	<link href="../assets/css/game.css" rel="stylesheet">
+	<link href="../assets/css/tic-tac-toe.css" rel="stylesheet">
+	<title>TIC TAC TOE</title>
+	<style>
+		
+	</style>
+	<body>
+		<div class="container">	
+			<div id="create" class="row align-center h-100 d-none">
+				<div class="menu col-6 text-center">
+					<span>
+					PLAYER NAME: 
+					<br/>
+					<input id="player_name" class="inp">
+					<br/><br/>
+					<button id="btn_create" class="btn btn-primary">CREATE</button>
+					</span>
+				</div>
+				<div class="menu col-6 text-center">
+					ROOM ID:
+					<br/>
+					<input id="room_id" class="inp">
+					<br/><br/>
+					PLAYER NAME: 
+					<br/>
+					<input id="player_name2" class="inp">
+					<br/><br/>
+					<button id="btn_join" class="btn btn-primary">JOIN</button>
+				</div>
+			</div>
+			<div id="game" class="d-none w-100">
+				<div class="row bg-primary">
+					<div class="col p-2 text-white fs-5 fw-bold">
+						TIC TAC TOE
+					</div>
+					<div class="col p-2 text-end">
+						<i onclick="on_exit_game()" class="btn btn-danger fa-solid fa-power-off" aria-hidden="true" title="exit"></i>
+					</div>
+				</div>
+				<div class="row p-2">
+					<div class="col-2">
+						<div class="card shadow-sm">
+							<div class="card-body">
+								<div class="text-center">
+									<img class="player-ava" id="p1_img" src="../images/tic-tac-toe/unknown.png">
+									<span id="p1_name" class="card-text player-name">???</span>
+								</div>
+								<div class="d-flex justify-content-between align-items-center">
+									<div class="btn-group">
+									<!--a class="btn btn-sm btn-outline-secondary" target="_blank">QUIT</a-->
+									</div>
+									<div class="indc" id="p1_indc"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+					
+					<div class="col-8 text-center">
+						<div>
+							<h1>SCORE</h2>
+						</div>
+						<div>
+							<h2 id="scores">0 | 0</h2>
+						</div>
+						<div id="room_controls" class="mt-5">
+							<strong class="p-2">ROOM ID:</strong>
+							<label class="p-1" id="room_id_dsp" type="text">&nbsp;</label>
+							<i id="btn_copy" class="btn btn-primary fa-solid fa-copy p-2" onclick="copy_room_id()" title="copy"></i>
+						</div>
+						<div id="game_controls" class="d-none">
+							<h2 id="game_msg">&nbsp;</h2>
+							<button id="btn_play" class="btn btn-primary mt-2" onclick="start_game()">START</button>
+						</div>
+					</div>
+
+					<div class="col-2">
+						<div class="card shadow-sm">
+							<div class="card-body">
+								<div class="text-center">
+									<img class="player-ava" id="p2_img" src="../images/tic-tac-toe/unknown.png">
+									<p id="p2_name" class="card-text player-name">???</p>
+								</div>	
+								<div class="d-flex justify-content-between align-items-center">
+									<div class="btn-group">
+									<!--a class="btn btn-sm btn-outline-secondary" target="_blank">QUIT</a-->
+									</div>
+									<div class="indc" id="p2_indc"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="row" class="">
+					<div class="col">
+						<div id="game_board"></div>
+					</div>
+				</div>
+				
+			</div>
+			
+		</div>
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="../assets/dist/js/jquery-3.6.3.js"></script>
+	<script src="../assets/js/scripts.js"></script>
+		
+	<script>
+		let req_key = "";
+		let player_turn = false; 
+		let game_status = "";
+		let min_players = 2;
+		let img_dir = "../images/tic-tac-toe/";
+
+		function start_game(){
+			let ind_arr = get_cookie();
+			socket.emit("room_command", [ind_arr[0],ind_arr[1],game_id, 'begin']);
+		}
+
+		function set_grid(ind){
+			if(player_turn && game_status == "begin"){
+				let ind_arr = get_cookie();
+				socket.emit("player_command", [ind_arr[0],ind_arr[1],game_id,'board', ind]);
+				//$("#g"+ind).html("X");
+				server_stream_comm();
+			}
+			
+		}
+
+		function set_board(){
+			let str = "";
+			for(let g=0; g<9; g++){
+				str += "<div id='g"+g+"' onclick='set_grid("+g+")''></div>";
+			}
+			
+            $("#game_board").html(str);
+		}
+
+		function init_game(){
+			server_stream_comm();
+			//req_timer = setInterval(server_stream_comm, 100);
+			set_board();
+        }
+
+		socket.on('server_update', function(data) {
+			let ind_arr = get_cookie();
+			let str = "";
+			let game_winner = "";
+			let  player_cnt = 0;
+			let p1_sco = 0;
+			let p2_sco = 0;
+			for(i=1; i<Object.keys(data).length; i++){
+				try{
+					$("#p"+i+"_name").html(data[i]['name']);
+					$("#p"+i+"_img").attr('src', img_dir+data[i]['char']+".png");
+
+					if(i == 1){
+						p1_sco = data[i]['score'];
+					}
+					else{
+						p2_sco = data[i]['score'];
+					}
+					
+					if(data['winner'] == data[i]['char']){
+						game_winner = data[i]['name'];
+					}
+					player_cnt++;
+				}
+				catch(e){
+					$("#p"+i+"_name").html("???");
+					$("#p"+i+"_img").attr('src', img_dir+"unknown.png");
+				}
+				
+			}
+			
+			let tmp = data['board'];
+			for(j=0; j<tmp.length; j++){
+				//$("#g"+j).html(tmp[j]);
+				if(tmp[j] == '')
+					$("#g"+j).css('background-image', 'none');
+				else
+					$("#g"+j).css('background-image', 'url("../images/tic-tac-toe/'+tmp[j]+'.png")');
+					$("#g"+j).css('background-size', '70px 70px');
+					$("#g"+j).css('background-repeat', 'no-repeat');
+					$("#g"+j).css('background-position', 'center');
+			}
+
+			game_status = data['status'];
+			
+			if(data['status'] == 'end'){
+				$("#btn_play").html("PLAY AGAIN");
+			}
+
+			if(data['status'] == 'pause'){
+				$("#room_controls").removeClass("d-none");
+				$(".indc").removeClass("blinker");
+			}
+			else if(data['status'] == 'begin'){
+				if(game_winner == ""){
+					$(".indc").removeClass("blinker");
+					if(data['turn'] == 'X')
+						$("#p1_indc").addClass("blinker");
+					else
+						$("#p2_indc").addClass("blinker");
+
+					if(data['turn'] == data[ind_arr[1]]['char']){
+						player_turn = true;
+					}
+					else{
+						player_turn = false;
+					}
+					$("#game_msg").html("&nbsp;");
+					$("#btn_play").addClass("d-none");
+
+				}
+				else{
+					
+				}
+			}
+			else if(data['status'] == 'draw'){
+				$(".indc").removeClass("blinker");
+				$("#game_msg").html("Draw");
+				$("#btn_play").removeClass("d-none");
+			}
+			else if(data['status'] == 'end'){
+				$(".indc").removeClass("blinker");
+				$("#game_msg").html(game_winner+" Wins");
+				$("#btn_play").removeClass("d-none");
+			}
+			
+			$("#scores").html(p1_sco+" | "+p2_sco);
+
+			if(player_cnt < min_players){
+				$("#room_controls").removeClass("d-none");
+				$("#game_controls").addClass("d-none");
+				$("#room_id_dsp").html(ind_arr[0]);	
+			}
+			else{
+				$("#room_controls").addClass("d-none");
+				$("#game_controls").removeClass("d-none");
+			}
+		});
+
+		function on_exit_game(){
+			let ind_arr = get_cookie();
+			socket.emit("room_command", [ind_arr[0],ind_arr[1],game_id, 'exit']);
+			window.close();
+		}
+
+		window.onload = function(){
+			let ind_arr = get_cookie();
+	
+			if(ind_arr.length != 0){
+				$("#create").addClass("d-none");
+				$("#game").removeClass("d-none");
+				socket.emit("rejoin_room", [ind_arr[0],ind_arr[1],game_id]);
+			}
+			else{
+				//socket.emit("enter_room", ['create','name']);
+				$("#create").removeClass("d-none");
+				init();
+			}
+		}
+	</script>
+	</body>
+</html>

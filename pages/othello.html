@@ -1,0 +1,493 @@
+<html>
+	<link href="../assets/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+	<link href="../assets/css/mystyle.css" rel="stylesheet">
+	<link href="../assets/css/game.css" rel="stylesheet">
+	<link href="../assets/css/snake-and-ladder.css" rel="stylesheet">
+	<title>OTHELLO</title>
+	<style>
+		body {
+            height: 100%;
+            margin: 0;
+			background-color: rgb(0, 0, 0);
+        }
+
+		.container {
+			background-color: bisque;
+			height: 100%;
+		}
+	
+		.player-ava {
+			width: 130px;
+			height: 130px;
+			padding: 5px;
+		}
+
+		.player-name {
+			font-weight: 600;
+			width: 100%;
+			
+			padding: 3px;
+		}
+
+		#game_board {
+			display: grid;
+			grid-template-columns: auto auto auto auto auto auto auto auto;
+			width: 400px;
+			height: 400px;
+			margin: auto;
+			
+		}
+
+		#game_board > div {
+			background-color: #08944e;
+			border: 1px solid black;
+			font-size: 12px;
+			text-align: center;
+			width: 50px;
+			height: 50px;
+		}
+
+		#p1_indc, #p2_indc {
+			border-radius: 25px;
+			width: 25px;
+			height: 25px;
+			background-color: red;
+			background-image: radial-gradient(red, rgb(234, 184, 184), gray);
+		}
+
+		#room_id_dsp {
+			background-color: #ffffff;
+			margin-left: 5px;
+			margin-right: 5px;
+		}
+		
+		.blinker {
+			animation: turn_indc 2s infinite;
+		}
+
+		@keyframes turn_indc {
+			from {
+				background-color: gray;
+				background-image: radial-gradient(white, gray)
+			}
+			to {
+				background-color: rgb(14, 194, 14);
+				background-image: radial-gradient(rgb(14, 194, 14), rgb(133, 237, 133), gray)
+			}
+		}
+
+		.turn_clock {
+			text-align: center;
+			font-weight: 600;
+		}
+
+		.flip-card {
+			background-color: transparent;
+			width: 40px;
+			height: 40px;
+			perspective: 1000px;
+		}
+
+		.flip-card-inner {
+			position: relative;
+			width: 100%;
+			height: 100%;
+			text-align: center;
+			transition: transform 0.6s;
+			transform-style: preserve-3d;
+		}
+
+		.flip-anim {
+			animation-name: flip_piece;
+  			animation-duration: 1s;
+		}
+
+		@keyframes flip_piece {
+			from {transform: rotateY(0deg);}
+			to {transform: rotateY(180deg);}
+		}
+
+		.flip-card-front, .flip-card-back {
+			position: absolute;
+			width: 100%;
+			height: 100%;
+			-webkit-backface-visibility: hidden;
+			backface-visibility: hidden;
+		}
+
+		.flip-card-front {
+			color: black;
+		}
+
+		.flip-card-back {
+			color: white;
+			transform: rotateY(180deg);
+		}
+
+		.flip-card-target {
+			transform: rotateY(180deg);
+		}
+
+	</style>
+	<body>
+		<div class="container">	
+			<div id="create" class="row align-center h-100">
+				<div class="menu col-6 text-center">
+					<span>
+					PLAYER NAME: 
+					<br/>
+					<input id="player_name" class="inp">
+					<br/><br/>
+					<button id="btn_create" class="btn btn-primary">CREATE</button>
+					</span>
+				</div>
+				<div class="menu col-6 text-center">
+					ROOM ID:
+					<br/>
+					<input id="room_id" class="inp">
+					<br/><br/>
+					PLAYER NAME: 
+					<br/>
+					<input id="player_name2" class="inp">
+					<br/><br/>
+					<button id="btn_join" class="btn btn-primary">JOIN</button>
+				</div>
+			</div>
+			<div id="game" class="d-none w-100">
+				<div class="row bg-primary">
+					<div class="col p-2 text-white fs-5 fw-bold">
+						OTHELLO
+					</div>
+					<div class="col p-2 text-end">
+						<i onclick="on_exit_game()" class="btn btn-danger fa-solid fa-power-off" aria-hidden="true" title="exit"></i>
+					</div>
+				</div>
+				<div class="row p-2">
+					<div class="col-2">
+						<div class="card shadow-sm">
+							<div class="card-body">
+								<div class="text-center">
+									<img class="player-ava" id="p1_img" src="../images/tic-tac-toe/unknown.png">
+									<span id="p1_name" class="card-text player-name">???</span>
+								</div>
+								<div class="d-flex justify-content-between align-items-center">
+									<div class="btn-group">
+									<!--a class="btn btn-sm btn-outline-secondary" target="_blank">QUIT</a-->
+									</div>
+									<div class="indc" id="p1_indc"></div>
+								</div>
+							</div>
+						</div>
+						<div id="player_time1" class="turn_clock"><i class="fa-solid fa-clock"></i> TIME --:--</div>
+					</div>
+					
+					<div class="col-8 text-center">
+						<div>
+							<h1>SCORE</h2>
+						</div>
+						<div>
+							<h2 id="scores">0 | 0</h2>
+						</div>
+						<div id="room_controls" class="mt-5">
+							<strong class="p-2">ROOM ID:</strong>
+							<label class="p-1" id="room_id_dsp" type="text">&nbsp;</label>
+							<i id="btn_copy" class="btn btn-primary fa-solid fa-copy p-2" onclick="copy_room_id()" title="copy"></i>
+						</div>
+						<div id="game_controls" class="d-none">
+							<h2 id="game_msg">&nbsp;</h2>
+							<button id="btn_play" class="btn btn-primary mt-2" onclick="start_game()">START</button>
+						</div>
+					</div>
+
+					<div class="col-2">
+						<div class="card shadow-sm">
+							<div class="card-body">
+								<div class="text-center">
+									<img class="player-ava" id="p2_img" src="../images/tic-tac-toe/unknown.png">
+									<p id="p2_name" class="card-text player-name">???</p>
+								</div>	
+								<div class="d-flex justify-content-between align-items-center">
+									<div class="btn-group">
+									<!--a class="btn btn-sm btn-outline-secondary" target="_blank">QUIT</a-->
+									</div>
+									<div class="indc" id="p2_indc"></div>
+								</div>
+							</div>
+						</div>
+						<div id="player_time2" class="turn_clock"><i class="fa-solid fa-clock"></i> TIME --:--</div>
+					</div>
+				</div>
+				<div class="row" class="">
+					<div class="col">
+						<div id="game_board"></div>
+					</div>
+				</div>
+				
+			</div>
+			
+		</div>
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="../assets/dist/js/jquery-3.6.3.js"></script>
+	<script src="../assets/js/scripts.js"></script>
+		
+	<script>
+		let req_key = "";
+		let player_turn = false; 
+		let game_status = "";
+		let min_players = 2;
+		let img_dir = "../images/othello/";
+		let filled_cell = []
+
+		let rem_time = 0;
+		let game_clock = 0;
+		let clock_interval;
+
+		function player_clock(){
+			if(rem_time == 0){
+				clearInterval(clock_interval);
+				let ind_arr = get_cookie();
+				socket.emit("player_command", [ind_arr[0],ind_arr[1],game_id,'board','timesup']);
+				server_stream_comm();
+			}
+			else
+				rem_time--;
+
+			game_clock.html("<i class='fa-solid fa-clock'></i> TIME " + format_clock(rem_time));
+		}
+
+		function start_game(){
+			let ind_arr = get_cookie();
+			socket.emit("room_command", [ind_arr[0],ind_arr[1],game_id, 'begin']);
+		}
+
+		function set_grid(ind){
+			if(player_turn && game_status == "begin" && filled_cell[ind] == undefined){
+				let ind_arr = get_cookie();
+				socket.emit("player_command", [ind_arr[0],ind_arr[1],game_id,'board', ind]);
+				//$("#g"+ind).html("X");
+				server_stream_comm();
+			}
+		}
+
+		function set_board(){
+			let str = "";
+			for(let g=0; g<64; g++){
+				str += "<div id='g"+g+"' onclick='set_grid("+g+")'></div>";
+			}
+            $("#game_board").html(str);
+		}
+
+		function init_game(){
+			server_stream_comm();
+			//req_timer = setInterval(server_stream_comm, 100);
+			set_board();
+        }
+
+		
+		socket.on('server_update', function(data) {
+			let ind_arr = get_cookie();
+			let str = "";
+			let game_winner = "";
+			let  player_cnt = 0;
+			let p1_sco = 0;
+			let p2_sco = 0;
+			let flip = data[1];
+			data = data[0];
+			clearInterval(clock_interval);
+			for(i=1; i<Object.keys(data).length; i++){
+				try{
+					$("#p"+i+"_name").html(data[i]['name']);
+					$("#p"+i+"_img").attr('src', img_dir+data[i]['char']+".png");
+					
+					if(data['status'] == 'begin')
+						$("#player_time"+i).html("<i class='fa-solid fa-clock'></i> TIME " + format_clock(data[i]['clock']));
+					else
+						$("#player_time"+i).html("<i class='fa-solid fa-clock'></i> TIME --:--");
+
+					if(data['turn'] == data[i]['char'] && data['status'] == 'begin'){
+						game_clock = $("#player_time"+i);
+						rem_time = data[i]['clock'];
+						clock_interval = setInterval(player_clock, 1000);
+					}
+
+					if(i == 1){
+						p1_sco = data[i]['score'];
+					}
+					else{
+						p2_sco = data[i]['score'];
+					}
+				
+					if(data['winner'] == data[i]['char']){
+						game_winner = data[i]['name'];
+					}
+					player_cnt++;
+				}
+				catch(e){
+					$("#p"+i+"_name").html("???");
+					$("#p"+i+"_img").attr('src', img_dir+"unknown.png");
+				}
+				
+			}
+			
+			let tmp = data['board'];
+			/*for(j=0; j<tmp.length; j++){
+				if(tmp[j] == '')
+					$("#g"+j).css('background-image', 'none');
+				else{
+					let ext = ".png";
+					for(i=0; i<flip.length-1; i++){
+						if(flip[i] == j)
+							ext = "x.png";
+					}
+					$("#g"+j).css('background-image', 'url("../images/othello/'+tmp[j]+ext+'")');
+					$("#g"+j).css('background-size', '40px 40px');
+					$("#g"+j).css('background-repeat', 'no-repeat');
+					$("#g"+j).css('background-position', 'center');
+				}
+				
+				//if(tmp[j] == '')
+					//$("#g"+j).html("");
+				//else
+					//$("#g"+j).html("<img src='../images/othello/"+tmp[j]+".png' width='40px' height='40px'>");
+			}*/
+
+			let target_flip = {}
+			for(i=0; i<flip.length; i++){
+				for(j=0; j<flip[i].length; j++){
+					target_flip[flip[i][j]] = 1;
+				}
+			}
+
+			for(j=0; j<tmp.length; j++){
+				if(tmp[j] == '')
+					//$("#g"+j).css('background-image', 'none');
+					$("#g"+j).html("&nbsp;");
+				else{
+					/*$("#g"+j).css('background-image', 'url("../images/othello/'+tmp[j]+'.png")');
+					$("#g"+j).css('background-size', '40px 40px');
+					$("#g"+j).css('background-repeat', 'no-repeat');
+					$("#g"+j).css('background-position', 'center');*/
+
+					let front_p = tmp[j];
+					let back_p = "W";
+
+					if(front_p == 'W'){
+						back_p = "B";
+					}
+
+					let flip_target = "";
+					if(target_flip[j] != undefined){
+						flip_target = "flip-card-target";
+						if(front_p == 'W'){
+							front_p = "B";
+							back_p = "W";
+						}
+						else{
+							front_p = "W";
+							back_p = "B";
+						}
+					}
+					
+					str = "<div class='flip-card' style='padding:4px 0;margin:auto;'>";
+						str += "<div id='board_piece"+j+"' class='flip-card-inner "+flip_target+"'>";
+							str += "<div class='flip-card-front'>";
+								str += "<img src='"+img_dir+front_p+".png' alt='front' style='width:40px;height:40px;'>";
+							str += "</div>";
+							str += "<div class='flip-card-back'>";
+								str += "<img src='"+img_dir+back_p+".png' alt='back' style='width:40px;height:40px;'>";
+							str += "</div>";
+						str += "</div>";
+					str += "</div>";
+					$("#g"+j).html(str);
+					filled_cell[j] = 1;
+
+				}
+			}
+
+			for(i=0; i<flip.length; i++){
+				for(j=0; j<flip[i].length; j++){
+					$("#board_piece"+flip[i][j]).addClass('flip-anim');
+				}
+			}
+			
+			game_status = data['status'];
+			
+			if(data['status'] == 'end'){
+				$("#btn_play").html("PLAY AGAIN");
+			}
+
+			if(data['status'] == 'pause'){
+				$("#room_controls").removeClass("d-none");
+				$(".indc").removeClass("blinker");
+			}
+			else if(data['status'] == 'begin'){
+				if(game_winner == ""){
+					$(".indc").removeClass("blinker");
+					if(data['turn'] == 'B')
+						$("#p1_indc").addClass("blinker");
+					else
+						$("#p2_indc").addClass("blinker");
+
+					if(data['turn'] == data[ind_arr[1]]['char']){
+						player_turn = true;
+					}
+					else{
+						player_turn = false;
+					}
+					$("#game_msg").html("&nbsp;");
+					$("#btn_play").addClass("d-none");
+
+				}
+				else{
+					
+				}
+			}
+			else if(data['status'] == 'draw'){
+				$(".indc").removeClass("blinker");
+				$("#game_msg").html("Draw");
+				$("#btn_play").removeClass("d-none");
+				filled_cell = []
+			}
+			else if(data['status'] == 'end'){
+				$(".indc").removeClass("blinker");
+				$("#game_msg").html(game_winner+" Wins");
+				$("#btn_play").removeClass("d-none");
+				filled_cell = []
+			}
+			
+			$("#scores").html(p1_sco+" | "+p2_sco);
+
+			if(player_cnt < min_players){
+				$("#room_controls").removeClass("d-none");
+				$("#game_controls").addClass("d-none");
+				$("#room_id_dsp").html(ind_arr[0]);	
+			}
+			else{
+				$("#room_controls").addClass("d-none");
+				$("#game_controls").removeClass("d-none");
+			}
+		});
+
+		function on_exit_game(){
+			let ind_arr = get_cookie();
+			socket.emit("room_command", [ind_arr[0],ind_arr[1],game_id, 'exit']);
+			window.close();
+		}
+
+		window.onload = function(){
+			let ind_arr = get_cookie();
+	
+			if(ind_arr.length != 0){
+				$("#create").addClass("d-none");
+				$("#game").removeClass("d-none");
+				socket.emit("rejoin_room", [ind_arr[0],ind_arr[1],game_id]);
+			}
+			else{
+				//socket.emit("enter_room", ['create','name']);
+				init();
+			}
+		}
+	</script>
+	</body>
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link href="../assets/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+	<link href="../assets/css/mystyle.css" rel="stylesheet">
+    <style>
+        body {
+            height : 100%;
+            width : 100%;
+        }
+        
+        canvas { 
+            border:1px solid #d3d3d3;
+            background-color: #f1f1f1;
+            display: block;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+    </head>
+    <body>
+        <div class="container">	
+			<div id="create" class="row align-center h-100">
+				<div class="menu col-6 text-center">
+					<span>
+					PLAYER NAME: 
+					<br/>
+					<input id="player_name" class="inp">
+					<br/><br/>
+					<button id="btn_create" class="btn btn-primary">CREATE</button>
+					</span>
+				</div>
+				<div class="menu col-6 text-center">
+					ROOM ID:
+					<br/>
+					<input id="room_id" class="inp">
+					<br/><br/>
+					PLAYER NAME: 
+					<br/>
+					<input id="player_name2" class="inp">
+					<br/><br/>
+					<button id="btn_join" class="btn btn-primary">JOIN</button>
+				</div>
+			</div>
+			<div id="game" class="d-none w-100">
+                <p id="">X: 12</p>
+            </div>
+        </div>
+    <script src="/socket.io/socket.io.js"></script>
+	<script src="../assets/dist/js/jquery-3.6.3.js"></script>
+	<script src="../assets/js/scripts.js"></script>
+    <script>
+        let myGamePiece;
+        let myGameArea;
+
+        function load_game_canvas() {
+            myGameArea = {
+                canvas : document.createElement("canvas"),
+                start : function() {
+                    this.canvas.width = window.innerWidth;
+                    this.canvas.height = window.innerHeight;
+                    this.context = this.canvas.getContext("2d");
+                    document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+                    this.frameNo = 0;
+                    this.interval = setInterval(updateGameArea, 20);
+                    },
+                clear : function() {
+                    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                },
+                stop : function() {
+                    clearInterval(this.interval);
+                }
+            }
+
+            start_game();
+        }
+
+        function start_game(){
+            myGamePiece = new component(30, 30, "../images/snake-and-ladder/ryu_norm_face.png", 10, 120, "image");
+            myGameArea.start();
+        }
+
+        function component(width, height, color, x, y, type) {
+            this.type = type;
+            if (type == "image") {
+                this.image = new Image();
+                this.image.src = color;
+            }
+            this.width = width;
+            this.height = height;
+            this.speedX = 0;
+            this.speedY = 0;    
+            this.x = x;
+            this.y = y;    
+            this.update = function() {
+                ctx = myGameArea.context;
+                if (type == "image") {
+                    ctx.drawImage(this.image, 
+                        this.x, 
+                        this.y,
+                        this.width, this.height);
+                } else {
+                    ctx.fillStyle = color;
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                }
+            }
+            this.newPos = function() {
+                this.x += this.speedX;
+                this.y += this.speedY;  
+                let ind_arr = get_cookie();
+                socket.emit("action_client", [ind_arr[0],ind_arr[1], 'x', this.x]);    
+            }
+        }
+
+        function updateGameArea() {
+            myGameArea.clear();
+            myGamePiece.newPos();
+            myGamePiece.update();
+        }
+
+        function moveup() {
+            myGamePiece.speedY = -1; 
+        }
+
+        function movedown() {
+            myGamePiece.speedY = 1; 
+        }
+
+        function moveleft() {
+            myGamePiece.speedX = -1; 
+        }
+
+        function moveright() {
+            myGamePiece.speedX = 1; 
+        }
+
+        function clearmove() {
+            myGamePiece.speedX = 0; 
+            myGamePiece.speedY = 0; 
+        }
+
+        function init_game(){
+            load_game_canvas();
+
+            $(document).on('keydown', function(event) {
+                if(event.which == 38){
+                    moveup();
+                }
+                else if(event.which == 40){
+                    movedown();
+                }
+                else if(event.which == 37){
+                    moveleft()
+                }
+                else if(event.which == 39){
+                    moveright()
+                }
+            });
+
+            $(document).on('keyup', function(event) {
+                clearmove();
+            });
+        }
+
+        window.onload = function(){
+			let ind_arr = get_cookie();
+
+			if(ind_arr.length != 0){
+				$("#create").addClass("d-none");
+				$("#game").removeClass("d-none");
+				socket.emit("rejoin_room", ind_arr);
+			}
+			else{
+				//socket.emit("enter_room", ['create','name']);
+			}
+
+			init();
+		}
+
+        socket.on('server_update', function(data) {
+			let ind_arr = get_cookie();
+			/*let str = "";
+			let tmp_room_id = "";
+			for(i=1; i<=Object.keys(data).length; i++){
+				tmp_room_id = ind_arr[0];
+			}*/		
+            console.log(data[ind_arr[1]]['x']);
+		});
+    </script>
+    </body>
+</html>

@@ -1,0 +1,71 @@
+<html>
+	<link href="../assets/dist/css/bootstrap.min.css" rel="stylesheet">
+	<style>
+		.menu {
+			margin: auto;
+  			width: 50%;
+  			padding: 10px;
+		}
+
+		.inp {
+			text-align: center;
+		}
+	</style>
+	<body>
+		<div class="container">	
+			<div id="create" class="row align-center h-100">
+				<div class="menu col-6 text-center">
+					<span>
+					PLAYER NAME: 
+					<br/>
+					<input id="player_name" class="inp"/>
+					<br/><br/>
+					<button id="btn_create" class="btn btn-primary">CREATE</button>
+					</span>
+				</div>
+				<div class="menu col-6 text-center">
+					ROOM ID:
+					<br/>
+					<input id="room_id" class="inp"/>
+					<br/><br/>
+					PLAYER NAME: 
+					<br/>
+					<input id="player_name2" class="inp"/>
+					<br/><br/>
+					<button id="btn_join" class="btn btn-primary">JOIN</button>
+				</div>
+			</div>
+		</div>
+		<script src="/socket.io/socket.io.js"></script>
+		<script src="../assets/dist/js/jquery-3.6.3.js"></script>
+		<script src="../assets/js/scripts.js"></script>
+		<script>
+			window.onload = function(){
+				let ind_arr = get_cookie();
+
+				if(ind_arr.length != 0){
+					window.location = "/snake-and-ladder";
+				}
+				else{
+					//socket.emit("enter_room", ['create','name']);
+				}
+			}
+
+			$("#btn_join").on('click', function(){
+				let p_name = $("#player_name2").val();
+				socket.emit("join_room", ['create',p_name]);
+			});
+
+			$("#btn_create").on('click', function(){
+				let p_name = $("#player_name").val();
+				socket.emit("enter_room", ['create',p_name]);
+			});
+
+			socket.on('set_client_cookie', function(data) {
+				set_cookie(data[0]+"-"+data[1])
+				window.location = "/snake-and-ladder";
+			});
+
+		</script>
+	</body>
+</html>

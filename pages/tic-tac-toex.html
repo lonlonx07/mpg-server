@@ -1,0 +1,414 @@
+<html>
+	<link href="../assets/dist/css/bootstrap.min.css" rel="stylesheet">
+	<style>
+		#grid {
+			font-family: arial, sans-serif;
+			border-collapse: collapse;
+			width: 300px;
+			height: 300px;
+			margin-left: auto;
+			margin-right: auto;
+		}
+		
+		#game_stat {
+			width: 100%;
+			border-collapse: collapse;
+		}
+			
+		.game_board td, .game_board th {
+			border: 1px solid #dddddd;
+			text-align: center;
+			width: 90px;
+			height: 90px;
+			border-color: #000;
+		}
+		
+		.game_stat td, .game_stat th {
+			border: 1px solid #dddddd;
+			text-align: center;
+			padding: -20px;
+			width: 20px;
+			height: 20px;
+			border-color: #000;
+			padding: 10px;
+		}
+		
+		#home {
+			margin-top: 10%;
+			text-align: center;
+		}
+		
+		#board, #intro {
+			width: 100%;
+			margin-top: 8%;
+			text-align: center;
+		}
+		
+		#room_id {
+			width: 200px;
+			border: dotted 1px;
+			padding: 2px 5px 2px 5px;
+		}
+		
+		#winner_indc {
+			font-size: 30px;
+			color: red;
+			width: 100%;
+			text-align: center;
+		}
+		
+		.navi_button {
+			width:200px;
+		}
+		
+		.create {
+			height:50px;
+		}
+		
+	</style>
+	<body>
+	<div class="container">	
+		<div id="intro">
+			<div class="row fixed-top">
+				<div class="col-12">
+					<h2>TIC TAC TOE</h2>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-12">
+					Enter Your Name<br/>
+					<input id="inp_player_name">
+					<br/><br/>
+					<button onclick="enter_home()">PLAY</button>
+				</div>
+			</div>
+		</div>
+		<div id="home">
+			<br/><br/><br/>
+			<div class="row">
+				<div class="col-6 align-self-center">
+					<button class="navi_button create" onclick="enter_game()">Create New</button>
+				</div>
+				
+				<div class="col-6 align-self-center">
+					Enter Room ID <br/> <input id="inp_room_id">
+					<br/><br/>
+					<button class="navi_button join" onclick="check_room()">Join</button>
+				</div>
+			</div>
+		</div>
+		<div id="game">
+			<div class="non_game_obj" style="font-size:20px;">
+				Room ID: <label id="room_id"></label><button onclick="copy_room_id()">copy</button>
+				<br/>
+			</div>
+			<div style="font-size:20px;">
+				<table id="game_stat" class="game_stat table table-bordered">
+					<tr>
+						<th>Turn</th>
+						<th>Sign</th>
+						<th>Player Name</th>
+						<th>Score</th>
+						<th>status</th>
+					</tr>
+				
+					<tr>
+						<td id="p_x"></td>
+						<td><img src='/images/tic-tac-toe/img_x.png' width='20px'/></td>
+						<td><label id="player_1"></label></td>
+						<td><label id="score_x">0</label></td>
+						<th id="status_player_1"></th>
+					</tr>
+					
+					<tr>
+						<td id="p_o"></td>
+						<td><img src='/images/tic-tac-toe/img_o.png' width='20px'/></td>
+						<td><label id="player_2"></label></td>
+						<td><label id="score_o">0</label></td>
+						<th id="status_player_2"></th>
+					</tr>
+				</table>
+			</div>
+			<div id="board">
+				<label id="winner_indc"></label>
+				<table id="grid" class="game_board table table-bordered">
+					<tr>
+						<td class="board_grid" id="1_1"></td>
+						<td class="board_grid" id="1_2"></td>
+						<td class="board_grid" id="1_3"></td>
+					</tr>
+					<tr>
+						<td class="board_grid" id="2_1"></td>
+						<td class="board_grid" id="2_2"></td>
+						<td class="board_grid" id="2_3"></td>
+					</tr>
+					<tr>
+						<td class="board_grid" id="3_1"></td>
+						<td class="board_grid" id="3_2"></td>
+						<td class="board_grid" id="3_3"></td>
+					</tr>
+				</table>
+				<br/>
+				<button onclick="forfeit_match()">RESET</button>
+			</div>
+		</div>
+	</div>
+		<script src="/socket.io/socket.io.js"></script>
+		<!--script src="https://code.jquery.com/jquery-3.6.3.js" integrity="sha256-nQLuAZGRRcILA+6dMBOvcRh5Pe310sBpanc6+QBmyVM=" crossorigin="anonymous"></script-->
+		<script src="../assets/dist/js/jquery-3.6.3.js"></script>
+		<script>
+		let socket = io();
+		let room_id = "";
+		let player_name = "";
+		let player_type = "";
+		let turn = "";
+		
+		function forfeit_match(){
+			socket.emit(room_id+"_reset_board", room_id);
+		}
+		
+		function hide_page(val){
+			if(val == "intro"){
+				$("#intro").show();
+				$("#home").hide();
+				$("#game").hide();
+			}
+			else if(val == "home"){
+				$("#intro").hide();
+				$("#home").show();
+				$("#game").hide();
+			}
+			else if(val == "game"){
+				$("#intro").hide();
+				$("#home").hide();
+				$("#game").show();
+			}
+		}
+		
+		function init(){
+			$("#inp_player_name").val("");
+			$("#inp_room_id").val("");
+			hide_page("intro");
+		}
+		
+		function enter_home(){
+			player_name = $("#inp_player_name").val();
+			if(check_string(player_name)){
+				hide_page("home");
+			}
+			else{
+				alert("Enter your name!");
+			}
+		}
+		
+		function enter_game(){
+			player_type = "player_1";
+			generate_room_id();
+		}
+		
+		function generate_room_id(){
+			let tmp_rnd_id = random_string(8);
+			room_id = tmp_rnd_id;
+			$("#room_id").html(tmp_rnd_id);
+			
+			socket.on("start", function(id) {
+				init_game();
+			});
+			
+			socket.on(room_id+'_setup', function(id) {
+				let str_arr = id.split("-");
+				$("#p_x").html("»");
+				turn = "x";
+				$("#player_1").html(check_player_name(str_arr[0]));
+				$("#player_2").html(check_player_name(str_arr[1]));
+				
+				if(str_arr[1] != "" && str_arr[1] != "undefined"){
+					$(".non_game_obj").hide();
+				}
+			});
+			
+			socket.emit("command", room_id);
+			socket.emit(room_id+"_set", player_name+"-"+room_id+"-"+player_type+"-x");
+		}
+		
+		function random_string(len){
+			let string_set = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+			let rnd = "";
+			
+			for(let i=0; i<len; i++){
+				rnd += string_set[Math.floor(Math.random() * string_set.length)];
+			}
+			
+			return rnd;
+		}
+		
+		function check_player_name(val){
+			if(val != "undefined"){
+				return val;
+			}
+			else{
+				return "-- waiting for player --";
+			}
+		}
+		
+		function check_string(val){
+			if((val).replace(/^\s+|\s+$/g,'') == ""){
+				return false;
+			}
+			else{
+				return true;
+			}
+		}
+		
+		 function copy_room_id(){
+            let copyText = $("#room_id").html();
+            navigator.clipboard.writeText(copyText);
+        }
+		
+		function join_room(){
+			room_id = ($("#inp_room_id").val()).replace(/^\s+|\s+$/g,'');
+			
+			if(check_string(room_id)){
+				player_type = "player_2";
+				$("#room_id").html(room_id);
+				socket.on("start", function(id) {
+					init_game();
+				});
+				
+				socket.on(room_id+'_setup', function(id) {
+					let str_arr = id.split("-");
+					//$("#p_x").html("»");
+					//turn = "x";
+					$("#player_1").html(check_player_name(str_arr[0]));
+					$("#player_2").html(check_player_name(str_arr[1]));
+					
+					if(str_arr[1] != "" && str_arr[1] != "undefined"){
+						$(".non_game_obj").hide();
+					}
+				});
+			
+				socket.emit("command", room_id);
+				socket.emit(room_id+"_set", player_name+"-"+room_id+"-"+player_type+"-o");
+			}
+			else{
+				alert("Enter your name!");
+			}
+		}
+		
+		function check_room(){
+			let tmp_room_id = $("#inp_room_id").val();
+			if(check_string(tmp_room_id)){
+				socket.on(tmp_room_id+'_room_res', function(res) {
+					if(res)
+						join_room();
+					else
+						alert("Room ID not exist!");
+				});
+				
+				socket.emit("check_room", tmp_room_id);
+			}
+		}
+		
+		function init_game(){
+			socket.emit(room_id+'get_board', room_id);
+			
+			socket.on(room_id+'_resume_board', function(board) {
+				if(board != undefined){
+					for(let ctr1=1; ctr1<4; ctr1++){
+						for(let ctr2=1; ctr2<4; ctr2++){
+							if(board[ctr1+"_"+ctr2] != "" && board[ctr1+"_"+ctr2] != undefined)
+								$("#"+ctr1+"_"+ctr2).html("<img src='/images/tic-tac-toe/img_"+board[ctr1+"_"+ctr2]+".png' width='50px'/>");
+						}
+					}
+				}
+				socket.emit('set_score', room_id);
+			});
+			
+			socket.on(room_id+'_tictactoe_progress', function(id) {
+				let str_arr = id.split("-");
+				$("#score_"+str_arr[0]).html(str_arr[1]);
+				$("#score_"+str_arr[2]).html(str_arr[3]);
+				
+					let winner_name;
+					if(str_arr[4] == "x"){
+						$("#winner_indc").css("color", "#FE605E");
+						winner_name = $("#player_1").html()+" win!";
+					}
+					else if(str_arr[4] == "x"){
+						$("#winner_indc").css("color", "#3DC4F2");
+						winner_name = $("#player_2").html()+" win!";
+					}
+					turn = str_arr[5];
+					try{$("#p_"+str_arr[5]).html("»");}catch(e){}
+					$("#winner_indc").html(winner_name);
+			});
+			
+			socket.on(room_id+'_clear_board', function(id) {
+				$(".board_grid").html("");
+				$("#winner_indc").html("");
+			});
+			
+			socket.on(room_id+'_player_status', function(id) {
+				let str_arr = id.split("-");
+				$("#status_"+str_arr[0]).html(str_arr[1]);
+				$("#status_"+str_arr[2]).html(str_arr[3]);
+			});
+			
+			hide_page("game");
+			
+			$("td").on('click', function(e) {
+				if(turn != "" && $("#winner_indc").html() == ""){
+					if (player_type == "player_1") {
+						socket.emit(room_id+'_move_check', this.id+"-x");
+					}
+					else{
+						socket.emit(room_id+'_move_check', this.id+"-o");
+					}
+				}
+			});
+
+			socket.on(room_id+'_move', function(id) {
+				let str_arr = id.split("-");
+				let sec = $("#"+str_arr[0]);
+				if (sec.html() == "") {
+					/*$(sec).css("background", "url('/images/tic-tac-toe/img_" + str_arr[1] + ".png')");
+					$(sec).css("background-repeat", "no-repeat");
+					$(sec).css("background-size", "61px 61px");*/
+					
+					$(sec).html("<img src='/images/tic-tac-toe/img_"+str_arr[1]+".png' width='50px'/>");
+					
+					let winner_name = "";
+					if(str_arr[1] == "x"){
+						$("#p_x").html("");
+						$("#p_o").html("»");
+						turn = "o";
+						$("#winner_indc").css("color", "#FE605E");
+						winner_name = $("#player_1").html();
+					}
+					else{
+						$("#p_x").html("»");
+						$("#p_o").html("");
+						turn = "x";
+						$("#winner_indc").css("color", "#3DC4F2");
+						winner_name = $("#player_2").html();
+					}
+					
+					if(str_arr[2] != "0"){
+						$("#winner_indc").html(winner_name+" win!");
+						socket.emit('set_score', room_id);
+					}
+				}
+			});
+			
+			try { socket.emit(room_id+'_send_active_status', player_type); }catch(e){}
+			setInterval(myTimer, 5000);
+
+			function myTimer() {
+				try { socket.emit(room_id+'_send_active_status', player_type); }catch(e){}
+			}
+		}
+		
+		init();
+		</script>
+	</body>
+</html>
