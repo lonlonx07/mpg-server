@@ -326,29 +326,32 @@
 
 		function extra_move(ext){
 			let ind_arr = get_cookie();
-			$(".board-cell").html('');
 			let tmp_ava = img_dir+"ava-"+game_data[move_index]['char']+".png";
-			$("#g_"+board_index[ext-1]).html("<img title=\"Hi, I'm Marlon.\" class='board-piece' src='"+tmp_ava+"'>");
+			//$(".board-cell").html('');
+			//$("#g_"+board_index[ext-1]).html("<img title=\"Hi, I'm Marlon.\" class='board-piece' src='"+tmp_ava+"'>");
+			
 			$("#char_react").html('<h2>&nbsp;</h2><small><i>&nbsp;</i></small>');
 			clearInterval(move_interval);
 			on_move = false;
 
 			game_data[move_index]['block'] = ch_piece;
+			set_board_piece();
 			socket.emit("player_command", [ind_arr[0],move_index,game_id,'block',ch_piece]);
 			inc_piece=1;
 		}
 
 		function move_piece(){
 			let ind_arr = get_cookie();
-			$(".board-cell").html('');
 			ch_piece+=inc_piece;
 			if(ch_piece == 100){
 				inc_piece = 0-1;
 			}
 
 			let tmp_ava = img_dir+"ava-"+game_data[move_index]['char']+".png";
-			$("#g_"+board_index[ch_piece-1]).html("<img class='board-piece board-piece-active' src='"+tmp_ava+"'>");
-			
+			//$(".board-cell").html('');
+			//$("#g_"+board_index[ch_piece-1]).html("<img class='board-piece board-piece-active' src='"+tmp_ava+"'>");
+			game_data[move_index]['block'] = ch_piece;
+			set_board_piece();
 			if(move_ctr == draw_val){
 				if(board_index[ladder[ch_piece]-1] != undefined){
 					ch_piece = ladder[ch_piece];
@@ -414,26 +417,28 @@
 		function set_board_piece(){
 			$(".board-cell").html('');
 			
-			for(i=1; i<game_data['players']; i++){
-				let tmp_ava = img_dir+"ava-"+game_data[i]['char']+".png";
-				let tmp_blk = game_data[move_index]['block']-1;
-				console.log(tmp_blk, "<<")
-				try{$("#g_"+board_index[tmp_blk]).html("<img class='board-piece' src='"+tmp_ava+"'>");}catch(e){}
+			for(i=1; i<=game_data['players']; i++){
+				if(game_data[i]['block'] != 0){
+					let tmp_ava = img_dir+"ava-"+game_data[i]['char']+".png";
+					let tmp_blk = game_data[i]['block']-1;
+
+					/*let hl = "board-piece-active";
+					if(game_data[i]['char'] != move_index)
+						hl = "";*/
+
+					try{$("#g_"+board_index[tmp_blk]).html("<img class='board-piece' src='"+tmp_ava+"'>");}catch(e){}
+				}
 			}
+
+			/*try{$("#g_"+board_index[game_data[1]['block']-1]).html("<img class='board-piece' src='"+(img_dir+"ava-"+game_data[1]['char'])+".png'>");}catch(e){}
+			try{$("#g_"+board_index[game_data[2]['block']-1]).html("<img class='board-piece' src='"+(img_dir+"ava-"+game_data[2]['char'])+".png'>");}catch(e){}
+			try{$("#g_"+board_index[game_data[3]['block']-1]).html("<img class='board-piece' src='"+(img_dir+"ava-"+game_data[3]['char'])+".png'>");}catch(e){}
+			try{$("#g_"+board_index[game_data[4]['block']-1]).html("<img class='board-piece' src='"+(img_dir+"ava-"+game_data[4]['char'])+".png'>");}catch(e){}*/
 			
 			/*try{$("#g_"+board_index[piece_pos[1]['cell']-1]).html("<img class='board-piece' src='"+piece_pos[1]['img']+"'>");}catch(e){}
 			try{$("#g_"+board_index[piece_pos[2]['cell']-1]).html("<img class='board-piece' src='"+piece_pos[2]['img']+"'>");}catch(e){}
 			try{$("#g_"+board_index[piece_pos[3]['cell']-1]).html("<img class='board-piece' src='"+piece_pos[3]['img']+"'>");}catch(e){}
 			try{$("#g_"+board_index[piece_pos[4]['cell']-1]).html("<img class='board-piece' src='"+piece_pos[4]['img']+"'>");}catch(e){}*/
-		}
-
-		function set_update_piece(){
-			for(i=1; i<game_data['players']; i++){
-				piece_pos[i] = [];
-				piece_pos[i]['img'] = img_dir+"ava-"+game_data[i]['char']+".png";
-				piece_pos[i]['cell'] = game_data[i]['block'];
-			}
-			set_board_piece();
 		}
 
 		function show_game_result_message(txt){
@@ -454,7 +459,7 @@
 				move_interval = setInterval(draw_dice, 2000, data[1], data[2]);
 			}
 			else if(data[0] == "next"){
-				game_data = data;
+				game_data = data[3];
 				$(".indc").removeClass("blinker");
 				$("#p"+data[1]+"_indc").addClass("blinker");
 				
