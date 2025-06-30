@@ -1,7 +1,7 @@
 players = {}
 dim = 8;
 container_cnt = dim*dim;
-time_limit = 30;
+time_limit = 1800;
 
 function sec_stamp(){
     return parseInt(Date.now()/1000);
