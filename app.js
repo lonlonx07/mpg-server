@@ -115,7 +115,7 @@ io.on('connection', (socket) => {
         else{
                 
         }
-        io.to(room_id).emit("set_client_cookie", [room_id, player_ind]);
+        io.to(socket.id).emit("set_client_cookie", [room_id, player_ind]);
 	});
 
     socket.on('player_command', data => {
@@ -125,7 +125,9 @@ io.on('connection', (socket) => {
         }
         else if(data[2] == games_list[1]){
             rescomm = mod_sandl.process_command(data);
-            io.to(room_id).emit("return_command", rescomm);
+            if(rescomm != 0){
+                io.to(room_id).emit("return_command", rescomm);
+            }
         }  
         else if(data[2] == games_list[2]){
             mod_oth.set_board_update(room_id, data[1], data[4]);

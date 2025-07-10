@@ -99,6 +99,27 @@
 				background-image: radial-gradient(rgb(14, 194, 14), rgb(133, 237, 133), gray)
 			}
 		}
+
+		#act_ind {
+			width: 100%;
+			text-align: center;
+			font-weight: 400;
+			animation: fade_anim 2s infinite;
+		}
+
+		@keyframes fade_anim {
+			from {
+				color: rgb(0, 0, 0);
+			}
+			to {
+				color: rgb(255, 255, 255);
+			}
+		}
+
+		.button-mode {
+			cursor: pointer;
+		}
+
 	</style>
 	<body>
 		<div class="container">	
@@ -184,11 +205,12 @@
 								<div id="in_game_controls" class="">
 									<table class="table w-100 h-100">
 										<tr>
-											<td class="dsp-game-event" rowspan="2" style="width: 20%; background-color:black;">
-												<img title="Click me." id="dice" src="../images/snakes-and-ladders/dice_1.png" onclick="init_draw()" width="150px" height="150px">
+											<td class="dsp-game-event" rowspan="2" style="width: 20%; background-color:black;" onclick="init_draw()">
+												<img id="dice" src="../images/snakes-and-ladders/dice_1.png" width="150px" height="150px">
+												<label id="act_ind">&nbsp;</label>
 											</td>
 											<td class="text-center">
-												<div>
+												<div id="room_controls">
 													<strong class="p-2">ROOM ID:</strong>
 													<label class="p-1" id="room_id_dsp" type="text">&nbsp;</label>
 													<i id="btn_copy" class="btn btn-primary fa-solid fa-copy p-2" onclick="copy_room_id()" title="copy"></i>
@@ -280,14 +302,14 @@
 		ladder[72] = 91;
 		ladder[80] = 99;
 		let snake = []
-		/*snake[17] = 7;
+		snake[17] = 7;
 		snake[54] = 34;
 		snake[62] = 19;
 		snake[64] = 60;
 		snake[87] = 36;
 		snake[93] = 73;
 		snake[95] = 75;
-		snake[98] = 79;*/
+		snake[98] = 79;
 
 
 		let draw_val = 0;
@@ -296,13 +318,35 @@
 		let ch_piece = 0;
 		let inc_piece = 1;
 		let move_index = 0;
-		let piece_pos = []
 		let on_move = false;
+
+		function enable_dice(){
+			if(player_turn){
+				$("#act_ind").html("TAP HERE");
+				$("#dice").addClass("button-mode");
+			}
+			else{
+				$("#act_ind").html("&nbsp;");
+				$("#dice").removeClass("button-mode");
+			}
+		}
+
+		function set_dice(dice_val, rot_val){
+			$('#dice').css({
+				'transform': 'rotate(' + rot_val + 'deg)',
+				'-ms-transform': 'rotate(' + rot_val + 'deg)',
+				'-moz-transform': 'rotate(' + rot_val + 'deg)',
+				'-webkit-transform': 'rotate(' + rot_val + 'deg)',
+				'-o-transform': 'rotate(' + rot_val + 'deg)'
+			}); 
+			$("#dice").attr('src', '../images/snakes-and-ladders/dice_'+dice_val+'.png');
+		}
 
 		function init_draw(){
 			let ind_arr = get_cookie();
-			if(!on_move && player_turn){
+			if(!on_move && player_turn && game_status != 'end'){
 				player_turn = false;
+				enable_dice();
 				on_move = true;
 				socket.emit("player_command", [ind_arr[0],ind_arr[1],game_id,'dice','draw']);
 				//server_stream_comm();
@@ -312,32 +356,28 @@
 		function draw_dice(dice_val, rot_val){
 			clearInterval(move_interval);
 			draw_val = dice_val;
-			let degrees = rot_val;
-			$('#dice').css({
-				'transform': 'rotate(' + degrees + 'deg)',
-				'-ms-transform': 'rotate(' + degrees + 'deg)',
-				'-moz-transform': 'rotate(' + degrees + 'deg)',
-				'-webkit-transform': 'rotate(' + degrees + 'deg)',
-				'-o-transform': 'rotate(' + degrees + 'deg)'
-			}); 
-			$("#dice").attr('src', '../images/snakes-and-ladders/dice_'+draw_val+'.png');
+			set_dice(dice_val, rot_val)
 			move_interval = setInterval(move_piece, 700);
 		}
 
 		function extra_move(ext){
+			on_move = false;
+			clearInterval(move_interval);
+			
 			let ind_arr = get_cookie();
 			let tmp_ava = img_dir+"ava-"+game_data[move_index]['char']+".png";
 			//$(".board-cell").html('');
 			//$("#g_"+board_index[ext-1]).html("<img title=\"Hi, I'm Marlon.\" class='board-piece' src='"+tmp_ava+"'>");
 			
-			$("#char_react").html('<h2>&nbsp;</h2><small><i>&nbsp;</i></small>');
-			clearInterval(move_interval);
-			on_move = false;
 
+			
 			game_data[move_index]['block'] = ch_piece;
 			set_board_piece();
 			socket.emit("player_command", [ind_arr[0],move_index,game_id,'block',ch_piece]);
 			inc_piece=1;
+
+			if(game_data['status'] == "begin")
+				show_game_result_message('<h2>&nbsp;</h2><small><i>&nbsp;</i></small>');
 		}
 
 		function move_piece(){
@@ -355,11 +395,11 @@
 			if(move_ctr == draw_val){
 				if(board_index[ladder[ch_piece]-1] != undefined){
 					ch_piece = ladder[ch_piece];
-					$("#char_react").html('<h2>Yeah!</h2><h6><i>proceed to '+ch_piece+'</i></h6>');
+					show_game_result_message('<h2>Yeah!</h2><h6><i>proceed to '+ch_piece+'</i></h6>');
 				}
 				else if(board_index[snake[ch_piece]-1] != undefined){
 					ch_piece = snake[ch_piece];
-					$("#char_react").html('<h2>Oh no!</h2><h6><i>proceed to '+ch_piece+'</i></h6>');
+					show_game_result_message('<h2>Oh no!</h2><h6><i>proceed to '+ch_piece+'</i></h6>');
 				}
 				
 				move_ctr=1;
@@ -370,6 +410,7 @@
 			else{
 				move_ctr++;
 			}
+			$("#p"+move_index+"_block").html(ch_piece);
 		}
 
 		function start_game(){
@@ -409,9 +450,9 @@
 		}
 
 		function init_game(){
-			server_stream_comm();
 			//req_timer = setInterval(server_stream_comm, 100);
 			set_board();
+			server_stream_comm();
         }
 
 		function set_board_piece(){
@@ -435,10 +476,6 @@
 			try{$("#g_"+board_index[game_data[3]['block']-1]).html("<img class='board-piece' src='"+(img_dir+"ava-"+game_data[3]['char'])+".png'>");}catch(e){}
 			try{$("#g_"+board_index[game_data[4]['block']-1]).html("<img class='board-piece' src='"+(img_dir+"ava-"+game_data[4]['char'])+".png'>");}catch(e){}*/
 			
-			/*try{$("#g_"+board_index[piece_pos[1]['cell']-1]).html("<img class='board-piece' src='"+piece_pos[1]['img']+"'>");}catch(e){}
-			try{$("#g_"+board_index[piece_pos[2]['cell']-1]).html("<img class='board-piece' src='"+piece_pos[2]['img']+"'>");}catch(e){}
-			try{$("#g_"+board_index[piece_pos[3]['cell']-1]).html("<img class='board-piece' src='"+piece_pos[3]['img']+"'>");}catch(e){}
-			try{$("#g_"+board_index[piece_pos[4]['cell']-1]).html("<img class='board-piece' src='"+piece_pos[4]['img']+"'>");}catch(e){}*/
 		}
 
 		function show_game_result_message(txt){
@@ -447,6 +484,9 @@
 
 		function check_winner(data){
 			if(data['winner'] != ''){
+				enable_dice();
+				$("#room_controls").removeClass("d-none");
+				$("#char_react").removeClass("d-none");
 				$(".indc").removeClass("blinker");
 				show_game_result_message("<h2>"+data['winner']+" Win!</h2>");
 				$("#btn_play").removeClass("d-none");
@@ -454,6 +494,7 @@
 		}
 
 		socket.on('return_command', function(data) {
+			let ind_arr = get_cookie();
 			if(data[0] == "draw"){
 				$("#dice").attr('src', '../images/snakes-and-ladders/dice-anim.gif');
 				move_interval = setInterval(draw_dice, 2000, data[1], data[2]);
@@ -464,9 +505,11 @@
 				$("#p"+data[1]+"_indc").addClass("blinker");
 				
 				ch_piece = data[2];
-				if(data[1] == move_index){
+				if(parseInt(ind_arr[1]) == data[1]){
 					player_turn = true;
 				}
+				
+				enable_dice()/
 
 				set_board_piece();
 				move_index = data[1];
@@ -542,11 +585,13 @@
 			}
 			
 			if(data['status'] == 'begin'){
+				$("#room_controls").addClass("d-none");
 				$("#btn_play").addClass("d-none");
 				$("#char_react").removeClass("d-none");
 				show_game_result_message('');
 			}
 			else{
+				$("#room_controls").removeClass("d-none");
 				$("#btn_play").removeClass("d-none");
 
 				if(data['status'] == '')
@@ -578,7 +623,7 @@
 					else{
 						player_turn = false;
 					}
-					
+					enable_dice();
 				}
 				else{
 					
@@ -590,6 +635,10 @@
 			}
 			else if(data['status'] == 'end'){
 				check_winner(data);
+			}
+
+			if((data['dice']).length == 2){
+				set_dice(data['dice'][0], data['dice'][1])
 			}
 		});
 

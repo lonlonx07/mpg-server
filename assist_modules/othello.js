@@ -273,11 +273,11 @@ function mthd_check_board(room_id, player_ind){
 
             if(tmp_x > tmp_o){
                 players[room_id]['winner'] = 'B';
-                players[room_id][player_ind]['score'] += 1;
+                players[room_id][1]['score'] += 1;
             }
             else if(tmp_x < tmp_o){
                 players[room_id]['winner'] = 'W';
-                players[room_id][player_ind]['score'] += 1;
+                players[room_id][2]['score'] += 1;
             }
         }
     }

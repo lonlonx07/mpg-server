@@ -1,7 +1,15 @@
 players = {}
-
+suspend_limit = 1800;
 function sec_stamp(){
     return parseInt(Date.now()/1000);
+}
+
+function check_room_players(room_id){
+    for(i=1; i<=players[room_id]['players']; i++){
+		if(sec_stamp()-players[room_id][i]['stamp'] >= suspend_limit){
+            players[room_id][i]['status'] = 'exit';
+        }
+	}
 }
 
 function mthd_player_generator(room_id, player_name){
@@ -24,7 +32,9 @@ function mthd_player_generator(room_id, player_name){
             players[room_id]['cell'] = {}
             players[room_id]['flip'] = []
             players[room_id]['blk'] = []
+            players[room_id]['dice'] = []
             players[room_id]['timer'] = 0
+            players[room_id]['resp'] = 0
         }
 
     do{
@@ -83,6 +93,7 @@ function mthd_process_command(data){
     let ret_data = [];
     if(data[3] == "dice"){
         if(data[4] == "draw"){
+            players[room_id]['resp'] = 1;
             let dice_rnd = (Math.floor(Math.random() * 6)+1)
             let dice_rot = (Math.floor(Math.random() * 180)+1)
 
@@ -94,25 +105,33 @@ function mthd_process_command(data){
                 }
             }
 
+            players[data[0]]['dice'][0] = dice_rnd;
+            players[data[0]]['dice'][1] = dice_rot;
             ret_data = ['draw', dice_rnd, dice_rot];
         }
     }
     else if(data[3] == "block"){
-        players[data[0]][data[1]]['block'] = data[4];
-        if(players[data[0]][data[1]]['block'] == 100){
-            players[data[0]]['winner'] = players[data[0]][data[1]]['name'];
-            players[data[0]]['status'] = 'end';
+        if(players[data[0]]['resp'] == 1){
+            players[data[0]][data[1]]['block'] = data[4];
+            if(players[data[0]][data[1]]['block'] == 100){
+                players[data[0]]['winner'] = players[data[0]][data[1]]['name'];
+                players[data[0]]['status'] = 'end';
+            }
+            players[data[0]]['resp'] = 0;
+            let ind = players[data[0]]['turn'];
+            ret_data = ['next', ind, players[data[0]][ind]['block'], players[data[0]]];
         }
-
-        let ind = players[data[0]]['turn'];
-        ret_data = ['next', ind, players[data[0]][ind]['block'], players[data[0]]];
+        else{
+            ret_data = 0;
+        }
     }
     else if(data[3] == "game"){
         if(data[4] == "begin"){
             players[data[0]]['status'] = data[4];
             players[data[0]]['winner'] = '';
+            players[data[0]]['dice'] = [];
 
-            for(i=1; i<players[data[0]]['players']; i++){
+            for(i=1; i<=players[data[0]]['players']; i++){
 				players[data[0]][i]['block'] = 0;
 			}
 

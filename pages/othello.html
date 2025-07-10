@@ -405,9 +405,11 @@
 				}
 			}
 
-			for(i=0; i<flip.length; i++){
-				for(j=0; j<flip[i].length; j++){
-					$("#board_piece"+flip[i][j]).addClass('flip-anim');
+			if(game_status == "begin"){
+				for(i=0; i<flip.length; i++){
+					for(j=0; j<flip[i].length; j++){
+						$("#board_piece"+flip[i][j]).addClass('flip-anim');
+					}
 				}
 			}
 			
