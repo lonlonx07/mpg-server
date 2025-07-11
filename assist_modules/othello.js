@@ -144,21 +144,26 @@ function generate_board_container(room_id, len){
             ctr_c = 1;
             ctr_r++;
         }
+
         if(i==28 || i==35){
             arr[i] = 'B';
         }
         else if(i==27 || i==36){
             arr[i] = 'W';
         }
-        /*if((i>33 && i<38) || (i>38 && i<46)){
-            arr[i] = 'B';
-        }
-        else if(i==38 || i==46 || i==47){
-            arr[i] = 'W';
-        }*/
         else{
             arr[i] = '';
         }
+        
+        /*if((i>=0 && i<=2) || (i>=12 && i<=15)){
+            arr[i] = 'B';
+        }
+        else if(i>=3 && i<=7){
+            arr[i] = '';
+        }
+        else{
+            arr[i] = 'W';
+        }*/
     }
     
     return arr;
@@ -217,27 +222,7 @@ function mthd_set_board_update(room_id, player_ind, ind){
         }
         players[room_id]['status'] = "end";
     }
-    else{
-    players[room_id]['board'][ind] = players[room_id][player_ind]['char'];
-    
-    players[room_id]['flip'] = [];
-    let tmp = players[room_id]['board'];
-    let res = 0;
-
-    res = check_move(tmp, room_id, ind, tmp[ind]);
-
-    for(i=0; i<players[room_id]['flip'].length; i++){
-        for(j=0; j<players[room_id]['flip'][i].length; j++)
-            tmp[players[room_id]['flip'][i][j]] = tmp[ind];
-    }
-
-    if(res == 0){
-        tmp[ind] = '';
-        players[room_id]['flip'] = [];
-    }
-    else{
-        
-        players[room_id]['move'] = players[room_id][player_ind]['char'];
+    else if(ind == 'pass'){
         if(players[room_id][player_ind]['char'] == 'B'){
             players[room_id]['turn'] = 'W';
         }
@@ -247,6 +232,36 @@ function mthd_set_board_update(room_id, player_ind, ind){
         players[room_id][player_ind]['clock'] -= (sec_stamp() - players[room_id]['timer']);
         players[room_id]['timer'] = sec_stamp();
     }
+    else{
+        players[room_id]['board'][ind] = players[room_id][player_ind]['char'];
+        
+        players[room_id]['flip'] = [];
+        let tmp = players[room_id]['board'];
+        let res = 0;
+
+        res = check_move(tmp, room_id, ind, tmp[ind]);
+
+        for(i=0; i<players[room_id]['flip'].length; i++){
+            for(j=0; j<players[room_id]['flip'][i].length; j++)
+                tmp[players[room_id]['flip'][i][j]] = tmp[ind];
+        }
+
+        if(res == 0){
+            tmp[ind] = '';
+            players[room_id]['flip'] = [];
+        }
+        else{
+            
+            players[room_id]['move'] = players[room_id][player_ind]['char'];
+            if(players[room_id][player_ind]['char'] == 'B'){
+                players[room_id]['turn'] = 'W';
+            }
+            else{
+                players[room_id]['turn'] = 'B';
+            }
+            players[room_id][player_ind]['clock'] -= (sec_stamp() - players[room_id]['timer']);
+            players[room_id]['timer'] = sec_stamp();
+        }
     }
 }
 

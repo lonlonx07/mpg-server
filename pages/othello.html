@@ -234,10 +234,12 @@
 	<script>
 		let req_key = "";
 		let player_turn = false; 
+		let player_ch = "";
 		let game_status = "";
 		let min_players = 2;
 		let img_dir = "../images/othello/";
 		let filled_cell = []
+		let game_board;
 
 		let rem_time = 0;
 		let game_clock = 0;
@@ -261,7 +263,7 @@
 			socket.emit("room_command", [ind_arr[0],ind_arr[1],game_id, 'begin']);
 		}
 
-		function set_grid(ind){
+		function set_grid(ind){	
 			if(player_turn && game_status == "begin" && filled_cell[ind] == undefined){
 				let ind_arr = get_cookie();
 				socket.emit("player_command", [ind_arr[0],ind_arr[1],game_id,'board', ind]);
@@ -284,16 +286,98 @@
 			set_board();
         }
 
+		let tmp_board = {}
+		tmp_board['cell'] = {}
+		tmp_board['blk'] = {}
+		function generate_board_container(len){
+			let ctr_c = 1;
+			let ctr_r = 1;
+			for(let i=0; i<len; i++){
+				let ind = ctr_c+'_'+ctr_r;
+				tmp_board['cell'][ind] = i;
+				tmp_board['blk'][i] = ind;
+
+				ctr_c++;
+				if(ctr_c == 9){
+					ctr_c = 1;
+					ctr_r++;
+				}
+			}
+		}
+		generate_board_container(64);
+
+		let mod_opt = [[-1,0], [1,0], [0,-1], [0,1], [-1,-1] ,[1,1], [-1,1], [1,-1]];
+		function simulate_move(){
+			if(player_turn){
+
+			let tmp = game_board;
+			ch = player_ch;
+			let valid = 0;
+			
+			for(j=0; j<tmp.length; j++){
+				let x = j;
+			
+				if(tmp[j] == ''){
+					let tmp_cr = (tmp_board['blk'][x]).split('_');
+					let po = [parseInt(tmp_cr[0]), parseInt(tmp_cr[1])];
+					
+					for(i=0; i<mod_opt.length; i++){
+						let tmp_arr = [];
+						let cv = po[0];
+						let rv = po[1];
+						let point = []
+						point.push(ch);
+						do {
+							cv += mod_opt[i][0];
+							rv += mod_opt[i][1];
+							let ind = tmp_board['cell'][cv+'_'+rv];
+							
+							if(ind != undefined && tmp[ind] != '' && tmp[ind] != ch){
+								point.push(tmp[tmp_board['cell'][cv+'_'+rv]]);
+							}
+							else{
+								if(ind != undefined && tmp[ind] != '')
+									point.push(tmp[tmp_board['cell'][cv+'_'+rv]]);
+								break; 
+							}     
+						}while(1);
+						
+						if(point.length >= 3){
+							if(ch == point[point.length-1]){
+								valid = 1;
+								break;
+							}
+						}
+					}
+				}
+			
+				if(valid){
+					break;
+				}
+			}
+			
+			if(valid == 0){
+				alert("No posible move.");
+				let ind_arr = get_cookie();
+				socket.emit("player_command", [ind_arr[0],ind_arr[1],game_id,'board', 'pass']);
+				server_stream_comm();
+			}
+
+			}
+		}
 		
 		socket.on('server_update', function(data) {
 			let ind_arr = get_cookie();
 			let str = "";
 			let game_winner = "";
-			let  player_cnt = 0;
+			let player_cnt = 0;
 			let p1_sco = 0;
 			let p2_sco = 0;
 			let flip = data[1];
 			data = data[0];
+			player_ch = data[ind_arr[1]]['char'];
+			game_board = data['board'];
+
 			clearInterval(clock_interval);
 			for(i=1; i<Object.keys(data).length; i++){
 				try{
@@ -433,6 +517,7 @@
 
 					if(data['turn'] == data[ind_arr[1]]['char']){
 						player_turn = true;
+						simulate_move();
 					}
 					else{
 						player_turn = false;
@@ -440,6 +525,7 @@
 					$("#game_msg").html("&nbsp;");
 					$("#btn_play").addClass("d-none");
 
+					
 				}
 				else{
 					
